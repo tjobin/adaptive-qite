@@ -1,2 +1,2 @@
-# alternating-qite
-Investigating the effect of using Quantum Imaginary-Time Evolution with the length of each time-step treated as a variational parameter. 
+# Varational Time-Step Quantum Imaginary-Time Evolution
+Investigating the effect of treating the timesteps in Quantum Imaginary-Time Evolution as variational parameters optimized classically
