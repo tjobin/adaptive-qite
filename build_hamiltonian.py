@@ -2,8 +2,8 @@
 from qiskit_nature.second_q.circuit.library.initial_states.hartree_fock import HartreeFock
 from utils import make_geometry
 from qiskit_nature.second_q.mappers import JordanWignerMapper
+import qiskit_nature.second_q.mappers as Mapper
 from qiskit_nature.second_q.drivers import PySCFDriver
-from qiskit_nature.second_q.mappers import JordanWignerMapper, BravyiKitaevSuperFastMapper, BravyiKitaevMapper
 from qiskit_nature.second_q.circuit.library import HartreeFock
 from qiskit.quantum_info import Statevector, SparsePauliOp
 from qiskit_nature.second_q.transformers import ActiveSpaceTransformer
@@ -17,22 +17,35 @@ def build_hamiltonian_and_state(
         geometry : str,
         basis_set : str,
         n_elec : int,
-        active_orb : int,
-        mapper,
+        n_activeorbs : int,
+        mapper : Mapper = JordanWignerMapper(),
         ):
+    """
+    Returns the quantum circuit preparing the Hartree Fock state and the Hamiltonian of the system in the active space.
+        Args: 
+            - geometry : str, geometry string for the molecule. E.g. 'H 0 0 0; H 0 0 0.741;' in units Angstroms
+            - basis_set : str, any from the pyscf basis set databank, e.g. 'sto-3g'
+            - active_orb : int, number of active orbitals in active space
+            - n_elec : int, number of electrons used in the simulation, the rest is frozen     
+            - mapper : qiskit_nature.second_q.mappers, fermion-to-qubit mapper, e.g. JordanWignerMapper() or ParityMapper()
+        Returns:
+            - state : qiskit.circuit.QuantumCircuit, the quantum circuit preparing the HF state
+            - hamiltonian_full : qiskit.quantum_info.SparsePauliOp, the Hamiltonian of the system in the active space,
+            including the nuclear repulsion energy and core electrons energies as a constant offset
+    """
     
     driver = PySCFDriver(
         atom=geometry,
         basis=basis_set,
-        charge=0,
-        spin=0
+        charge=0, # assume neutral molecule
+        spin=0    # assume singlet state
     )
     transformer = ActiveSpaceTransformer(
-        num_electrons=n_elec,            # Keep 2 valence electrons
-        num_spatial_orbitals=active_orb      # Keep 3 orbitals (e.g. HOMO, LUMO, LUMO+1)
+        num_electrons=n_elec,                # keep n_elec valence electrons
+        num_spatial_orbitals=n_activeorbs      # keep n_activeorbs orbitals (e.g. n_activeorbs = 3 --> HOMO, LUMO, LUMO+1)
     )
 
-    # 2. Run the Driver to get the Electronic Problem
+    # Run the Driver to get the Electronic Problem
     problem = driver.run()
     reduced_problem = transformer.transform(problem)
     state = Statevector(HartreeFock(
@@ -41,8 +54,8 @@ def build_hamiltonian_and_state(
         qubit_mapper=mapper
         ))
 
-    # 3. Generate the Qubit Hamiltonian
-    # We use Jordan-Wigner mapping, which results in 4 qubits for STO-3G
+    # Generate the Qubit Hamiltonian
+    # We use Jordan-Wigner mapping, which results in 2 * n_activeorbs qubits for STO-3G
     hamiltonian_op = mapper.map(reduced_problem.hamiltonian.second_q_op())
 
     # Add Nuclear Repulsion Energy (constant offset usually stored separately)
@@ -53,4 +66,4 @@ def build_hamiltonian_and_state(
     hamiltonian_full = hamiltonian_op + SparsePauliOp(["I" * hamiltonian_op.num_qubits], coeffs=[nuclear_repulsion+core_energy])
 
 
-    return hamiltonian_full, state
+    return state, hamiltonian_full
