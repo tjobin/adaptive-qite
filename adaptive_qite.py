@@ -144,7 +144,7 @@ def solve_vectorized(
 
 # --- Adaptive Circuit Step ---
 
-def qite_circuit_step_adaptive(
+def adaptive_qite_step(
         qc: QuantumCircuit,
         H: list[SparsePauliOp],
         current_delta_tau: float,
@@ -223,9 +223,9 @@ def qite_circuit_step_adaptive(
 
     return qc, max_a_in_sweep
 
-# --- Main Adaptive Loop (For Loop Version) ---
+# --- Main Adaptive Loop ---
 
-def run_circuit_qite_adaptive(
+def run_adaptive_qite(
         H: list[SparsePauliOp],
         initial_state: QuantumCircuit,
         total_time: float,
@@ -310,7 +310,7 @@ def run_circuit_qite_adaptive(
                 current_dt = total_time - time_elapsed
             
             # Perform QITE Step
-            qc_trial, max_a = qite_circuit_step_adaptive(qc_trial, H, current_dt, domain_radius)
+            qc_trial, max_a = adaptive_qite_step(qc_trial, H, current_dt, domain_radius)
         
             # Measure Data
             psi_trial = Statevector.from_instruction(qc_trial)
