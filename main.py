@@ -5,6 +5,12 @@ from qiskit_nature.second_q.mappers import JordanWignerMapper
 from state_and_hamiltonian import build_hamiltonian_and_state
 import numpy as np
 
+
+### Main script to run the adaptive QITE algorithm for H2 molecule and plot the results.
+### Example below: 
+### Plot the Potential Energy Surface (PES) of H2 as a function of the interatomic distance,
+### comparing the adaptive QITE energy to the exact FCI energy.
+
 ## Params for the molecule
 molecule = 'H2'
 geometry= make_geometry(molecule)
